@@ -1,0 +1,196 @@
+<div class="app-shell">
+  <aside class="sidebar">
+    <header class="brand">
+      <div class="brand-mark">
+        <span></span>
+      </div>
+
+      <div>
+        <strong>SharedPlanner</strong>
+        <small>Agenda compartilhada</small>
+      </div>
+    </header>
+
+    <nav class="navigation" aria-label="Módulos">
+      <a routerLink="/calendar" routerLinkActive="active">
+        <span class="nav-icon calendar"></span>
+        Calendário
+      </a>
+
+      <section class="nav-group">
+        <button type="button" [class.open]="isNavGroupOpen('admin')" (click)="toggleNavGroup('admin')">
+          <span class="nav-icon admin"></span>
+          Administrativo
+          <small></small>
+        </button>
+
+        @if (isNavGroupOpen('admin')) {
+          <div class="nav-subitems">
+            <a routerLink="/pending" routerLinkActive="active">Pendências</a>
+            <a routerLink="/members" routerLinkActive="active">Membros</a>
+            @if (isAdmin()) {
+              <a routerLink="/admin/users" routerLinkActive="active">Usuários</a>
+            }
+            <a routerLink="/audit" routerLinkActive="active">Auditoria</a>
+          </div>
+        }
+      </section>
+
+      <section class="nav-group">
+        <button type="button" [class.open]="isNavGroupOpen('finance')" (click)="toggleNavGroup('finance')">
+          <span class="nav-icon finance"></span>
+          Financeiro
+          <small></small>
+        </button>
+
+        @if (isNavGroupOpen('finance')) {
+          <div class="nav-subitems">
+            <a routerLink="/finance" routerLinkActive="active">Receitas</a>
+            <a routerLink="/finance" routerLinkActive="active">Despesas</a>
+            <a routerLink="/finance" routerLinkActive="active">Relatórios</a>
+          </div>
+        }
+      </section>
+
+      <a routerLink="/settings" routerLinkActive="active">
+        <span class="nav-icon settings"></span>
+        Configurações
+      </a>
+    </nav>
+
+    <section class="team-card">
+      <div class="team-illustration" aria-hidden="true">
+        <span class="person person-left"></span>
+        <span class="person person-center"></span>
+        <span class="person person-right"></span>
+        <span class="meeting-table"></span>
+      </div>
+      <strong>Trabalho em equipe</strong>
+      <p>Convide sua equipe e colabore em tempo real.</p>
+      <button type="button">
+        <span class="invite-icon" aria-hidden="true"></span>
+        Convidar usuário
+      </button>
+    </section>
+  </aside>
+
+  <section class="workspace">
+    <header class="topbar">
+      <div class="topbar-main">
+        <div class="search-wrapper">
+          <div class="search-box" [class.search-active]="isSearchPanelOpen()">
+            <span></span>
+            <input
+              type="search"
+              placeholder="Buscar eventos, clientes ou descrições"
+              [value]="searchTerm()"
+              (focus)="onSearchFocus()"
+              (input)="onSearch($any($event.target).value)"
+              (keydown.escape)="clearSearch()"
+            />
+
+            @if (searchTerm()) {
+              <button
+                class="search-clear-button"
+                type="button"
+                aria-label="Limpar busca"
+                (click)="clearSearch()"
+              >
+                ×
+              </button>
+            }
+          </div>
+
+          @if (isSearchPanelOpen()) {
+            <section class="search-results-panel" aria-label="Resultados da busca">
+              @if (isSearchLoading()) {
+                <p class="search-state">Buscando eventos...</p>
+              } @else if (searchError()) {
+                <p class="search-state error">{{ searchError() }}</p>
+              } @else if (searchResults().length) {
+                <header>
+                  <strong>Eventos encontrados</strong>
+                  <small>{{ searchResults().length }} resultado(s)</small>
+                </header>
+
+                <div class="search-results-list">
+                  @for (result of searchResults(); track result.id) {
+                    <button
+                      class="search-result-item"
+                      type="button"
+                      (click)="selectSearchResult(result)"
+                    >
+                      <span class="result-date">{{ formatSearchResultDate(result.startsAt) }}</span>
+                      <span class="result-main">
+                        <strong>{{ searchResultTitle(result) }}</strong>
+                        <small>{{ searchResultSubtitle(result) }}</small>
+                      </span>
+                      <span class="result-status">{{ result.status }}</span>
+                    </button>
+                  }
+                </div>
+              } @else {
+                <p class="search-state">Nenhum evento encontrado.</p>
+              }
+            </section>
+          }
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <div class="profile-wrapper">
+          <button
+            class="profile-trigger"
+            type="button"
+            [class.open]="showProfileMenu()"
+            (click)="toggleProfileMenu()"
+            aria-label="Menu do usuário"
+          >
+            <div class="avatar">{{ userInitials() }}</div>
+            <div class="profile-info">
+              <strong>{{ currentUser()?.fullName || 'Usuário' }}</strong>
+              <small>{{ currentUser()?.role || '' }}</small>
+            </div>
+            <small class="profile-caret"></small>
+          </button>
+
+          @if (showProfileMenu()) {
+            <div class="profile-backdrop" (click)="closeProfileMenu()"></div>
+            <div class="profile-menu">
+              <div class="profile-menu-header">
+                <div class="avatar">{{ userInitials() }}</div>
+                <div>
+                  <strong>{{ currentUser()?.fullName || 'Usuário' }}</strong>
+                  <small>{{ currentUser()?.role || '' }}</small>
+                </div>
+              </div>
+
+              <div class="profile-menu-divider"></div>
+
+              <button type="button" class="profile-menu-item">
+                <span class="profile-menu-icon theme-icon"></span>
+                Tema claro / escuro
+              </button>
+
+              <a routerLink="/settings" class="profile-menu-item" (click)="closeProfileMenu()">
+                <span class="profile-menu-icon settings-icon"></span>
+                Configurações
+              </a>
+
+              <div class="profile-menu-divider"></div>
+
+              <button type="button" class="profile-menu-item danger" (click)="logout()">
+                <span class="profile-menu-icon logout-icon"></span>
+                Sair
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    </header>
+
+    <main class="content">
+      <router-outlet />
+    </main>
+  </section>
+</div>
